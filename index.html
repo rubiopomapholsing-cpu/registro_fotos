@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#e9ece8">
+  <meta name="description" content="Organiza fotografías, asigna descripciones y genera anexos Word para fiscalización.">
+  <title>Registro fotográfico de fiscalización</title>
+  <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+  <header class="app-header">
+    <div>
+      <p class="eyebrow">Herramienta de campo</p>
+      <h1>Registro fotográfico <span>· Fiscalización</span></h1>
+    </div>
+    <span class="local-badge"><span aria-hidden="true"></span> Guardado en este dispositivo</span>
+  </header>
+
+  <main class="app-shell">
+    <div id="mensaje" class="notice" role="status" aria-live="polite" hidden></div>
+    <section class="toolbar" aria-label="Acciones del proyecto">
+      <button class="button button-secondary" type="button" id="take-photo">Tomar foto</button>
+      <input id="camera-input" class="visually-hidden" type="file" accept="image/*" capture="environment">
+      <button class="button button-secondary" type="button" id="choose-photos">Agregar imágenes</button>
+      <input id="images-input" class="visually-hidden" type="file" accept="image/*" multiple>
+      <button class="button button-secondary" type="button" id="new-project">Nuevo proyecto</button>
+      <button class="button button-secondary" type="submit" form="project-form" id="save-project">Guardar proyecto</button>
+      <button class="button button-primary" type="button" id="export-docx" disabled>Generar Word</button>
+      <button class="button button-danger" type="button" id="delete-project" disabled>Eliminar proyecto</button>
+    </section>
+
+    <form id="project-form" class="project-meta" novalidate>
+      <input id="project-id" type="hidden">
+      <label class="meta-project"><span>Proyecto abierto</span>
+        <select id="project-select" aria-label="Seleccionar proyecto">
+          <option value="">Nuevo proyecto</option>
+        </select>
+      </label>
+      <label class="meta-title"><span>Título del anexo</span><input id="appendix-title" maxlength="160" value="ANEXO N.° 1 - FOTOGRAFÍAS" required></label>
+      <label><span>Razón social</span><input id="company-name" maxlength="200" placeholder="Empresa ficticia"></label>
+      <label><span>Establecimiento / unidad</span><input id="project-establishment" maxlength="160" placeholder="Establecimiento" required></label>
+      <label><span>Placa(s)</span><input id="vehicle-plates" maxlength="120" placeholder="Opcional"></label>
+      <label><span>Código</span><input id="project-code" maxlength="80" placeholder="Ej. FIS-2026-014" required></label>
+      <label><span>Fecha de visita</span><input id="project-date" type="date" required></label>
+      <label><span>Lugar</span><input id="project-place" maxlength="160" placeholder="Distrito o dirección" required></label>
+      <label><span>Fiscalizador</span><input id="project-inspector" maxlength="120" placeholder="Nombre completo" required></label>
+    </form>
+
+    <section class="workbench" aria-label="Gestión de fotografías">
+      <div class="list-panel">
+        <div class="list-heading">
+          <div>
+            <h2>Fotografías <span class="count-pill" id="photo-count">0</span></h2>
+            <p id="project-summary">Crea o abre un proyecto para comenzar.</p>
+          </div>
+        </div>
+        <div class="list-filters">
+          <label for="photo-filter">Mostrar</label>
+          <select id="photo-filter">
+            <option value="all">Todas</option>
+            <option value="pending">Pendientes</option>
+            <option value="assigned">Asignadas</option>
+          </select>
+          <span id="assignment-count">0 pendientes · 0 asignadas</span>
+        </div>
+        <div class="word-order"><strong>Orden del Word:</strong>
+          <button class="button button-small" id="move-up" type="button" disabled>↑ Subir</button>
+          <button class="button button-small" id="move-down" type="button" disabled>↓ Bajar</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Fotografía</th><th>Fecha y hora</th><th>N.º Word</th><th>Revisión</th></tr>
+            </thead>
+            <tbody id="photo-rows"></tbody>
+          </table>
+          <div id="empty-list" class="empty-state">Agrega fotografías para que aparezcan en esta lista.</div>
+        </div>
+      </div>
+
+      <aside class="detail-panel" aria-label="Detalle de fotografía seleccionada">
+        <div id="photo-placeholder" class="photo-placeholder">
+          <span aria-hidden="true">▧</span>
+          <strong>Selecciona una fotografía</strong>
+          <p>La vista previa y el banco de descripciones aparecerán aquí.</p>
+        </div>
+        <div id="photo-detail" hidden>
+          <div class="preview-wrap"><img id="selected-image" alt="Vista previa de fotografía"></div>
+          <p id="selected-file" class="file-meta"></p>
+          <div class="description-tools">
+            <div class="description-heading">
+              <div>
+                <h2>Descripción disponible</h2>
+                <p id="description-help">Elige una descripción para asignarla a esta foto.</p>
+              </div>
+              <button class="button button-small" type="button" id="add-description">+ Agregar descripción</button>
+            </div>
+            <label for="description-search">Buscar</label>
+            <div class="search-row">
+              <input id="description-search" type="search" placeholder="Buscar descripción…">
+              <button class="button button-small" type="button" id="clear-search">Limpiar</button>
+              <span id="description-count">0 disponibles</span>
+            </div>
+            <select id="description-select" size="5" aria-label="Descripciones disponibles"></select>
+            <label for="photo-description">Descripción para el Word (editable)</label>
+            <textarea id="photo-description" rows="3" maxlength="1000" placeholder="Elige una descripción o escribe una propia…"></textarea>
+            <div class="detail-actions">
+              <button class="button button-secondary" type="button" id="return-pending">Devolver a pendiente</button>
+              <button class="button button-danger" type="button" id="delete-photo">Eliminar foto</button>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="appendix-panel" aria-labelledby="appendix-heading">
+      <div class="appendix-heading">
+        <div>
+          <p class="eyebrow">Documento de salida</p>
+          <h2 id="appendix-heading">Vista previa del anexo</h2>
+        </div>
+        <span id="appendix-project-summary">Sin proyecto seleccionado</span>
+      </div>
+      <div id="appendix-preview" class="appendix-preview">
+        <p class="appendix-empty">Asigna descripciones para ver aquí la secuencia del Word.</p>
+      </div>
+    </section>
+    <footer class="page-footer">Las fotos se guardan en este navegador. La fecha de incorporación no certifica cuándo se tomó originalmente una imagen.</footer>
+  </main>
+
+  <dialog id="pending-dialog" class="app-dialog">
+    <form method="dialog" class="dialog-form">
+      <div class="dialog-heading">
+        <div><p class="eyebrow">Nuevas evidencias</p><h2>Revisa antes de guardar</h2><p id="pending-count">Prepara las fotografías seleccionadas.</p></div>
+        <button class="icon-button" value="cancel" aria-label="Descartar selección">×</button>
+      </div>
+      <div id="pending-grid" class="pending-grid"></div>
+      <div class="dialog-actions">
+        <button class="button button-secondary" type="button" id="discard-pending">Descartar</button>
+        <button class="button button-primary" type="button" id="confirm-photos">Guardar fotografías</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="description-dialog" class="app-dialog">
+    <form method="dialog" class="dialog-form">
+      <div class="dialog-heading">
+        <div><p class="eyebrow">Banco del proyecto</p><h2>Agregar descripciones</h2><p>Pega una descripción por línea o carga un archivo .txt.</p></div>
+        <button class="icon-button" value="cancel" aria-label="Cerrar ventana">×</button>
+      </div>
+      <label class="button button-secondary text-file-label" for="description-file">Cargar archivo .txt</label>
+      <input id="description-file" class="visually-hidden" type="file" accept=".txt,text/plain">
+      <label for="description-lines">Descripciones</label>
+      <textarea id="description-lines" rows="9" placeholder="Una descripción por línea…"></textarea>
+      <div class="dialog-actions">
+        <button class="button button-secondary" value="cancel">Cancelar</button>
+        <button class="button button-primary" type="button" id="save-description-bank">Agregar descripciones</button>
+      </div>
+    </form>
+  </dialog>
+
+  <template id="photo-row-template">
+    <tr class="photo-row" tabindex="0">
+      <td><div class="table-photo"><img alt=""><span class="filename"></span></div></td>
+      <td class="table-file-date"></td>
+      <td class="word-number"></td>
+      <td><span class="photo-status"></span></td>
+    </tr>
+  </template>
+
+  <script src="js/vendor/docx.umd.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/imagenes.js"></script>
+  <script src="js/exportar.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
